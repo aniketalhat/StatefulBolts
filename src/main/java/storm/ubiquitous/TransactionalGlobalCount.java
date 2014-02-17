@@ -7,6 +7,7 @@ import java.util.Map;
 
 import storm.ubiquitous.bolts.BatchCount;
 import storm.ubiquitous.bolts.BatchNormalizer;
+import storm.ubiquitous.spouts.BatchSpout;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
@@ -24,7 +25,7 @@ import backtype.storm.tuple.Values;
  */
 @SuppressWarnings("deprecation")
 public class TransactionalGlobalCount {
-  public static final int PARTITION_TAKE_PER_BATCH = 3;
+  public static final int PARTITION_TAKE_PER_BATCH = 4;
   
   	@SuppressWarnings("serial")
 	public static final Map<Integer, List<List<Object>>> DATA = new HashMap<Integer, List<List<Object>>>() {{
@@ -61,8 +62,9 @@ public class TransactionalGlobalCount {
   }}; 
  
   public static void main(String[] args) throws Exception {
-    MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("line"), PARTITION_TAKE_PER_BATCH);
-    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout", spout, 4);
+    //MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("line"), PARTITION_TAKE_PER_BATCH);
+    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout", new BatchSpout(), PARTITION_TAKE_PER_BATCH);
+    
     
     builder.setBolt("normalizer", new BatchNormalizer(), 5)
     	.shuffleGrouping("spout");
@@ -73,6 +75,7 @@ public class TransactionalGlobalCount {
     Config config = new Config();
     
     //config.setDebug(true);
+    
     config.setMaxSpoutPending(3);
     config.setNumWorkers(3);
     if (args != null && args.length > 0) {
