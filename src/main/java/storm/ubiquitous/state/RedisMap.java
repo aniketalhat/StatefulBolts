@@ -24,6 +24,7 @@ import redis.clients.jedis.Jedis;
 public class RedisMap implements IPersistentMap{
 	
 	String serverURL;
+	String className;
 	ByteArrayOutputStream byteOut;
 	ObjectOutputStream out;
 	ByteArrayInputStream byteIn;
@@ -31,6 +32,12 @@ public class RedisMap implements IPersistentMap{
 	
 	public RedisMap(String serverURL) {
 		this.serverURL=serverURL;		
+	}
+	
+	public RedisMap(String serverURL, String className)
+	{
+		this.serverURL=serverURL;
+		this.className=className;
 	}
 
 	public void setState(byte[] key, Object value) {
