@@ -62,8 +62,9 @@ public class TransactionalGlobalCount {
   }}; 
  
   public static void main(String[] args) throws Exception {
-    //MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("line"), PARTITION_TAKE_PER_BATCH);
-    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout", new BatchSpout(), PARTITION_TAKE_PER_BATCH);
+    MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("line"), PARTITION_TAKE_PER_BATCH);
+    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout", /*spout*/ new BatchSpout()
+    										, PARTITION_TAKE_PER_BATCH);
     
     
     builder.setBolt("normalizer", new BatchNormalizer(), 5)
@@ -76,7 +77,7 @@ public class TransactionalGlobalCount {
     
     //config.setDebug(true);
     
-    config.setMaxSpoutPending(3);
+    //config.setMaxSpoutPending(3);
     config.setNumWorkers(3);
     if (args != null && args.length > 0) {
     	StormSubmitter.submitTopology(args[0], config, builder.buildTopology());
