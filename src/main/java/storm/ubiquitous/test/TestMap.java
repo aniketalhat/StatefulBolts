@@ -21,7 +21,7 @@ public class TestMap implements Serializable {
 		RedisMap mapStore = new RedisMap("localhost");
 		try {
 			//Obtain the state of Bolt for Txid: 3
-			BigInteger a=new BigInteger("1");
+			BigInteger a=new BigInteger("3");
 			byte key[]=a.toByteArray();
 			
 			counters = (ConcurrentHashMap<String, CountValue>) mapStore.getState(key);

@@ -43,6 +43,7 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
 	Map<String, Integer> counters;
 	Integer _count = 1;
 	RedisMap mapStore;
+	static int test;
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
 			    BatchOutputCollector collector, TransactionAttempt id) {
@@ -54,7 +55,7 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
    
 	public void execute(Tuple tuple) {
 		name = tuple.getString(1);
-   	
+		test++;
 		if(!counters.containsKey(name)){
 		  counters.put(name, _count);
 		}
@@ -63,6 +64,8 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
 		  _count = counters.get(name) + 1;
 		  counters.put(name, _count);
 		}
+		if(test == 7)
+			throw new FailedException();
    }    
    
 	public void finishBatch() throws FailedException{
@@ -78,26 +81,26 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
 	    	   	newVal.txid = _id.getTransactionId();
 	    	   	newVal.atid = _id.getAttemptId();
 	          
-			if (val != null) {
-				newVal.prev_count = val.count;
-				newVal.count = val.count;
-			}
+				if (val != null) {
+					newVal.prev_count = val.count;
+					newVal.count = val.count;
+				}
 
-			newVal.count = newVal.count + counters.get(key);
-			INMEMORYDB.put(key, newVal);
-	       	}
-	        
+				newVal.count = newVal.count + counters.get(key);
+				INMEMORYDB.put(key, newVal);
+	       	}	        
 	       	else {
 	         
 			newVal = val;
-			System.out.println("Tuple: " +  key + " Txid: " + newVal.txid + " AttemptID: "+ newVal.atid + 
-			" is replayed.");
+			System.out.println("#Tuple: " +  key + " Txid: " + newVal.txid + " AttemptID: "+ newVal.atid + 
+			" processing avoided.");
 	       	}
 	        	System.out.println("String: "+key+" NewCount: "+newVal.count+" PrevCount: "
 	        	+newVal.prev_count+" Txid: "+_id.getTransactionId()+" AttemptID: "+ _id.getAttemptId());
 	       
-	       	_collector.emit(new Values(_id, key, newVal.count, newVal.prev_count));
+	           	_collector.emit(new Values(_id, key, newVal.count, newVal.prev_count));		 
 		}
+	   	
 	       	//Store State
 	   	if(counters.size()>0)
 	      	{

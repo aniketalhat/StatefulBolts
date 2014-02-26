@@ -1,0 +1,6 @@
+The next() and hasNext() methods and their primitive-type companion methods (such as nextInt() and hasNextInt()) 
+first skip any input that matches the delimiter pattern, and then attempt to return the next token. 
+Both hasNext and next methods may block waiting for further input.  
+The id for the transactional topology is used to store state about the progress of topology in Zookeeper, 
+so that if you restart the topology it will continue where it left off.
+A transactional topology has a single TransactionalSpout that is defined 

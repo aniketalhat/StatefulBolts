@@ -1,0 +1,3 @@
+Whether a hasNext method blocks has no connection to whether or not its associated next method will block.
+takes as input in the constructor an id for the transactional topology, 
+an id for the spout within the topology, a transactional spout, and optionally the parallelism for the transactional spout.

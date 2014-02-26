@@ -1,0 +1,6 @@
+in the constructor of TransactionalTopologyBuilder. 
+In this example, MemoryTransactionalSpout is used which reads in data from an in-memory 
+partitioned source of data (the DATA variable). The second argument defines the fields 
+for the data, and the third argument specifies the maximum number of tuples to emit from each partition per batch of tuples. 
+The interface for defining your own transactional spouts is discussed later on in this tutorial.
+Now on to the bolts. This topology parallelizes the computation of the global count. 

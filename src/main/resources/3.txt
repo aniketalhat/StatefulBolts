@@ -1,0 +1,4 @@
+The first bolt, BatchCount, randomly partitions the input stream using a shuffle grouping 
+and emits the count for each partition. The second bolt, UpdateGlobalCount, does a global grouping 
+and sums together the partial counts to get the count for the batch. It then updates the global 
+count in the database if necessary.

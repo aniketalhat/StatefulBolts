@@ -8,6 +8,7 @@ import java.util.Map;
 import storm.ubiquitous.bolts.BatchCount;
 import storm.ubiquitous.bolts.BatchNormalizer;
 import storm.ubiquitous.spouts.BatchSpout;
+import storm.ubiquitous.spouts.BatchSpoutFile;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
@@ -63,28 +64,26 @@ public class TransactionalGlobalCount {
  
   public static void main(String[] args) throws Exception {
     MemoryTransactionalSpout spout = new MemoryTransactionalSpout(DATA, new Fields("line"), PARTITION_TAKE_PER_BATCH);
-    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout", /*spout*/ new BatchSpout()
-    										, PARTITION_TAKE_PER_BATCH);
+    TransactionalTopologyBuilder builder = new TransactionalTopologyBuilder("global-count", "spout",  new BatchSpoutFile(), PARTITION_TAKE_PER_BATCH);
     
     
-    builder.setBolt("normalizer", new BatchNormalizer(), 5)
+    builder.setBolt("normalizer", new BatchNormalizer(), 7)
     	.shuffleGrouping("spout");
-    builder.setBolt("inmemory-count", new BatchCount(), 5)
+    builder.setBolt("inmemory-count", new BatchCount(), 7)
     	.fieldsGrouping("normalizer", new Fields("word"));
        
     LocalCluster cluster = new LocalCluster();
     Config config = new Config();
     
     //config.setDebug(true);
-    
-    //config.setMaxSpoutPending(3);
+    config.setMaxSpoutPending(3);
     config.setNumWorkers(3);
     if (args != null && args.length > 0) {
     	StormSubmitter.submitTopology(args[0], config, builder.buildTopology());
       }
     else
     	cluster.submitTopology("global-count-topology", config, builder.buildTopology());
-     	Thread.sleep(10000);
-     	cluster.shutdown();
+     	//Thread.sleep(10000);
+     	//cluster.shutdown();
     }
 }
