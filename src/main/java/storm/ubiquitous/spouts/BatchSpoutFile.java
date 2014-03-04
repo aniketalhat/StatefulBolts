@@ -60,6 +60,7 @@ public class BatchSpoutFile extends BasePartitionedTransactionalSpout<SpoutTrans
 	@Override
 	public void close() {
 	    try {
+	    	reader.close();
 	    	fileReader.close();
 	    } catch (IOException e) {
 	    	e.printStackTrace();
@@ -76,9 +77,10 @@ public class BatchSpoutFile extends BasePartitionedTransactionalSpout<SpoutTrans
 	@Override
 	    public void close() {
 	    try {
+	    	reader.close();
 	    	fileReader.close();
 	    } catch (IOException e) {
-		e.printStackTrace();
+	    	e.printStackTrace();
 	    }
 	}
 	
@@ -93,7 +95,7 @@ public class BatchSpoutFile extends BasePartitionedTransactionalSpout<SpoutTrans
 	    	System.out.println("In emitBatchNew() and Emitting from Partition: "+ partition);
 	    	if(lastPartitionMeta != null)
 	    		i=lastPartitionMeta.fileName+1;
-	    	System.out.println("Emitting Batchno "+ i);
+	    	System.out.println("Emitting Batchno " + i);
 	    	readAndEmit(i, tx, collector);	
 	    	metadata = new SpoutTransactionMetadataFile(i,false);	    		    	
 	    } 
@@ -106,13 +108,17 @@ public class BatchSpoutFile extends BasePartitionedTransactionalSpout<SpoutTrans
 	@Override
 	    public void emitPartitionBatch(TransactionAttempt tx, BatchOutputCollector collector, int partition,
 					   				   SpoutTransactionMetadataFile partitionMeta) {
-		    System.out.println("Replaying BatchNo: "+partitionMeta.fileName);
-			readAndEmit(partitionMeta.fileName, tx, collector);		
+		//Replay the failed batch only.    
+		if(partitionMeta.fileName == i)
+		    {
+		    	System.out.println("Replaying BatchNo: " + partitionMeta.fileName);
+		    	readAndEmit(partitionMeta.fileName , tx, collector);
+		    }
 		}
 	
 	public void readAndEmit(int fileName, TransactionAttempt tx, BatchOutputCollector collector) {
 			String str;
-			try {
+			try{
 				fileReader = new FileReader("src/main/resources/"+fileName+".txt");
 		    	reader = new BufferedReader(fileReader);
 		    	System.out.println("Reading from file : "+fileName);
@@ -122,7 +128,7 @@ public class BatchSpoutFile extends BasePartitionedTransactionalSpout<SpoutTrans
 			} catch (Exception e) {
 				System.out.println("Exception: "+e);
 				completed = true;
-			}				
+			}			
     	}
    }    
 }

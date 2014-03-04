@@ -69,7 +69,7 @@ public class TransactionalGlobalCount {
     
     builder.setBolt("normalizer", new BatchNormalizer(), 7)
     	.shuffleGrouping("spout");
-    builder.setBolt("inmemory-count", new BatchCount(), 7)
+    builder.setBolt("inmemory-count", new BatchCount("localhost", 6379), 7)
     	.fieldsGrouping("normalizer", new Fields("word"));
        
     LocalCluster cluster = new LocalCluster();

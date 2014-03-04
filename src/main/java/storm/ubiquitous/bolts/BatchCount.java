@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import redis.clients.jedis.Jedis;
 import storm.ubiquitous.state.RedisMap;
 import backtype.storm.coordination.BatchOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -18,7 +19,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class BatchCount extends BaseTransactionalBolt implements ICommitter{
+public class BatchCount extends BaseTransactionalBolt {
 	/**
 	 * 
 	 * Committer Bolt
@@ -44,7 +45,15 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter{
 	Map<String, Integer> counters;
 	Integer _count = 1;
 	RedisMap mapStore;
+	transient Jedis jedis; 
+	String redisHost;
+	int redisPort;
 	static int test;
+	
+	public BatchCount(String redisHost, int redisPort) {
+		this.redisHost = redisHost;
+		this.redisPort = redisPort;
+	}
 
 	public void prepare(@SuppressWarnings("rawtypes") Map conf, TopologyContext context, 
 			    BatchOutputCollector collector, TransactionAttempt id) {
@@ -52,6 +61,8 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter{
 		this.counters = new HashMap<String, Integer>();
 		_collector=collector;
 		mapStore=new RedisMap("localhost");
+		//jedis = new Jedis(redisHost, redisPort, 1800);
+		//jedis.connect();
 	}
    
 	public void execute(Tuple tuple) {
@@ -65,8 +76,9 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter{
 		  _count = counters.get(name) + 1;
 		  counters.put(name, _count);
 		}
+		//jedis.hincrBy("jazoon:hashtags", name, 1);
 		//Raise Exception
-		if(test == 27)
+		if(test == 50)
 			throw new FailedException();
    }    
    
