@@ -18,24 +18,25 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class BatchCount extends BaseTransactionalBolt implements ICommitter, Serializable{
+public class BatchCount extends BaseTransactionalBolt implements ICommitter{
 	/**
 	 * 
 	 * Committer Bolt
 	 * @author aniket
 	 */
 	private static final long serialVersionUID = -2343991642735232104L;
-
+	
+	//Attributes of every tuple
 	@SuppressWarnings("serial")
 	public static class CountValue implements Serializable{
 		    public Integer prev_count = null;
 		    public int count = 0;
 		    public BigInteger txid = null;
 		    public long atid = 0L;
+		    public long duration; 
 	}
 	
-	public static Map<String, CountValue> INMEMORYDB = new ConcurrentHashMap<String, CountValue>();;
-	
+	public static Map<String, CountValue> INMEMORYDB = new ConcurrentHashMap<String, CountValue>();
 	
 	TransactionAttempt _id;
 	BatchOutputCollector _collector;
@@ -64,19 +65,25 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
 		  _count = counters.get(name) + 1;
 		  counters.put(name, _count);
 		}
-		if(test == 7)
+		//Raise Exception
+		if(test == 27)
 			throw new FailedException();
    }    
    
-	public void finishBatch() throws FailedException{
+	public void finishBatch(){
 		
 	   	for (String key : counters.keySet()) {
-	        
+	    
+   		//Create a new instance of every tuple.
 		CountValue val = INMEMORYDB.get(key);
 		CountValue newVal;
 
+		//Compare for tuple existence.
 	       	if (val == null || !val.txid.equals(_id.getTransactionId())) {
 	          
+	       		//Start Timer.
+	       		long starttime = System.nanoTime();
+	       		
 	    	   	newVal = new CountValue();
 	    	   	newVal.txid = _id.getTransactionId();
 	    	   	newVal.atid = _id.getAttemptId();
@@ -87,26 +94,35 @@ public class BatchCount extends BaseTransactionalBolt implements ICommitter, Ser
 				}
 
 				newVal.count = newVal.count + counters.get(key);
-				INMEMORYDB.put(key, newVal);
-	       	}	        
+				
+				//End Timer.
+				long endtime = System.nanoTime();
+				
+				//Calculate duration.
+				long duration = endtime - starttime;
+				
+				newVal.duration = duration;
+				INMEMORYDB.put(key, newVal);						
+				
+	       	}	
+	       	//Tuple already processed.
 	       	else {
 	         
 			newVal = val;
-			System.out.println("#Tuple: " +  key + " Txid: " + newVal.txid + " AttemptID: "+ newVal.atid + 
-			" processing avoided.");
+			System.out.println("[ALERT] Re-processing of Tuple: {" +  key + "} with Txid: " + newVal.txid + " and AttemptID: "+ newVal.atid + 
+			" avoided, approximate time saved: "+newVal.duration + " (nanosecond)");
 	       	}
-	        	System.out.println("String: "+key+" NewCount: "+newVal.count+" PrevCount: "
-	        	+newVal.prev_count+" Txid: "+_id.getTransactionId()+" AttemptID: "+ _id.getAttemptId());
+	        	System.out.println("[OUTPUT] Tuple: {" + key + "} NewCount: " + newVal.count+" PrevCount: "
+	        	+ newVal.prev_count + " Txid: "+_id.getTransactionId() + " AttemptID: " + _id.getAttemptId());
 	       
 	           	_collector.emit(new Values(_id, key, newVal.count, newVal.prev_count));		 
 		}
 	   	
-	       	//Store State
+	       	//Save state of a complete batch.
 	   	if(counters.size()>0)
 	      	{
 	    	  	mapStore.setState(_id.getTransactionId().toByteArray(), INMEMORYDB);
-	      	}
-	   	
+	      	}	   	
    }    
    
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
