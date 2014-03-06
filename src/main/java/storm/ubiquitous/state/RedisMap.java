@@ -12,6 +12,8 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 
 /**
  * This is an idea to build abstractions for bolts with fault-tolerant state (so if a task dies and gets 
@@ -43,9 +45,11 @@ public class RedisMap implements IPersistentMap{
 	public void setState(byte[] key, Object value) {
 		Jedis db = null;
 		Kryo kryo = null;
+		Transaction multi = null;
 		try {
 			
 			db = new Jedis(serverURL); 
+			multi = db.multi();
 			
 			//Java Serialization
 			//byteOut = new ByteArrayOutputStream();
@@ -59,10 +63,11 @@ public class RedisMap implements IPersistentMap{
 			kryo.writeObject(output, value);
 			
 			byte [] byteValue=output.toBytes();
-			db.set(key,byteValue);
-			db.save(); 
-			output.close();		    
-
+			multi.set(key,byteValue);
+			multi.save();
+			multi.exec();
+			output.close();	
+			
 	      	}
 			
 		catch(Exception i) {			
@@ -75,11 +80,15 @@ public class RedisMap implements IPersistentMap{
 		Object value = null;
 		Jedis db = null;
 		Kryo kryo = null;
+		Transaction multi= null;
 		try {
 			 
 			 db = new Jedis(serverURL);
+			 multi = db.multi();
 			 kryo = new Kryo(); 
-			 byte[] store = db.get(key);
+			 
+			 Response<byte[]> store = multi.get(key);
+			 multi.exec();
 			 
 			 //Java De-Serialization
 			 //byteIn = new ByteArrayInputStream(store);
@@ -87,8 +96,8 @@ public class RedisMap implements IPersistentMap{
 			 //value = in.readObject();
 			 //in.close();
 			 //byteIn.close();
-				
-			 Input input = new Input(new ByteArrayInputStream(store));
+			 
+			 Input input = new Input(new ByteArrayInputStream(store.get()));
 			 value = kryo.readObject(input, ConcurrentHashMap.class);
 			 System.out.println("Bolt state retrieved.");
 			 input.close();
